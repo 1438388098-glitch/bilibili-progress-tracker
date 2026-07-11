@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B站进度追踪</title>
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+<div id="app">
+  <header class="header">
+    <div class="header-left"><h1>B站网课进度追踪</h1></div>
+    <div class="header-center">
+      <button id="btn-identify" class="btn btn-primary btn-icon">&#128269; 识别当前页面</button>
+    </div>
+    <div class="header-right">
+      <button id="btn-refresh" class="btn btn-outline" title="刷新数据">&#8635; 刷新</button>
+      <button id="btn-new-course" class="btn btn-outline">+ 新建</button>
+      <div class="dropdown" id="menu-dropdown">
+        <button class="btn btn-icon-only" id="btn-menu">&#8942;</button>
+        <div class="dropdown-content hidden" id="dropdown-menu">
+          <a href="#" data-action="import">导入备份</a>
+          <a href="#" data-action="export-json">导出 JSON</a>
+          <a href="#" data-action="export-csv">导出 CSV</a>
+          <a href="#" data-action="settings">设置</a><hr>
+          <a href="#" data-action="clear" class="danger">清除所有数据</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="identify-progress" class="identify-progress hidden"><span class="spinner"></span> 正在识别...</div>
+  <div id="identify-result" class="identify-result hidden"></div>
+
+  <section class="stats-zone">
+    <div class="stat-card">
+      <div class="stat-label">今日学习</div>
+      <div class="stat-value" id="stat-today-time">0m</div>
+      <div class="stat-detail" id="stat-today-detail">已完成 0 个视频</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">连续打卡</div>
+      <div class="stat-value" id="stat-streak-current">0 天</div>
+      <div class="stat-detail">最长: <span id="stat-streak-longest">0</span> 天</div>
+    </div>
+  </section>
+
+  <section id="now-playing-zone" class="now-playing-zone hidden">
+    <div class="now-playing-card">
+      <div class="np-header">📺 正在播放</div>
+      <div class="np-title" id="np-title">—</div>
+      <div class="np-progress"><div class="np-progress-bar" id="np-bar" style="width:0%"></div></div>
+      <div class="np-meta">
+        <span id="np-time">0:00</span>
+        <span class="np-course" id="np-course"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="courses-zone">
+    <div class="courses-toolbar">
+      <span class="courses-count" id="courses-count">共 0 门课程</span>
+      <input type="text" id="search-input" placeholder="搜索课程..." class="search-input">
+    </div>
+    <div id="courses-list" class="courses-list"></div>
+    <div id="courses-empty" class="empty-state hidden">
+      <div class="empty-icon">&#128218;</div>
+      <div class="empty-text">还没有课程</div>
+      <div class="empty-hint">打开 B 站合集页 → 点「识别当前页面」一键导入</div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span id="footer-streak"></span>
+    <span class="footer-version">v2.0.0</span>
+  </footer>
+</div>
+
+<!-- New course modal -->
+<div id="modal-new-course" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <h3>新建课程</h3>
+    <label>课程名称</label><input type="text" id="new-course-title" placeholder="输入课程名称">
+    <label>BV 号列表（每行一个）</label>
+    <textarea id="new-course-bvlist" rows="6" placeholder="BV1xx411c7XH&#10;BV1xx411c7mD&#10;..."></textarea>
+    <div class="modal-actions">
+      <button id="btn-modal-cancel" class="btn">取消</button>
+      <button id="btn-modal-save" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Identify modal -->
+<div id="modal-identify" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <h3 id="identify-modal-title">识别结果</h3>
+    <div id="identify-modal-body"></div>
+    <div class="modal-actions">
+      <button id="btn-identify-cancel" class="btn">取消</button>
+      <button id="btn-identify-import" class="btn btn-primary">导入为课程</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div id="modal-settings" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <h3>设置</h3>
+    <div class="setting-group">
+      <label>完成判定阈值</label>
+      <div class="setting-with-value">
+        <input type="range" id="setting-threshold" min="50" max="100" value="98" step="1">
+        <span id="threshold-display" class="setting-val">98%</span>
+      </div>
+      <span class="setting-hint">播放进度达到此百分比即视为"已完成"</span>
+    </div>
+    <div class="setting-group">
+      <label>轮询间隔</label>
+      <select id="setting-poll-interval">
+        <option value="3">3 秒</option><option value="5" selected>5 秒</option>
+        <option value="10">10 秒</option><option value="15">15 秒</option><option value="30">30 秒</option>
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>学习时间显示精度</label>
+      <select id="setting-time-precision">
+        <option value="minutes">精确到分（1h 23m）</option>
+        <option value="seconds">精确到秒（1h 23m 45s）</option>
+      </select>
+    </div>
+    <div class="modal-actions"><button id="btn-settings-close" class="btn">关闭</button></div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div id="modal-import" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <h3>导入备份</h3><p>选择之前导出的 JSON 备份文件</p>
+    <input type="file" id="file-import" accept=".json">
+    <div id="import-status" class="import-status hidden"></div>
+    <div class="modal-actions"><button id="btn-import-close" class="btn">关闭</button></div>
+  </div>
+</div>
+
+<!-- Edit course modal -->
+<div id="modal-edit-course" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <h3>编辑课程</h3>
+    <label>课程名称</label><input type="text" id="edit-course-title" placeholder="课程名称">
+    <label>BV 号列表（每行一个，按你期望的顺序排列）</label>
+    <textarea id="edit-course-bvlist" rows="10" placeholder="BV1xx411c7XH&#10;BV1xx411c7mD&#10;..."></textarea>
+    <div class="modal-actions">
+      <button id="btn-edit-cancel" class="btn">取消</button>
+      <button id="btn-edit-save" class="btn btn-primary">保存修改</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="../lib/format.js"></script>
+<script src="main.js"></script>
+<script src="courses.js"></script>
+<script src="stats.js"></script>
+<script src="modals.js"></script>
+</body>
+</html>

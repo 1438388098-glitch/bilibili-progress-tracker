@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "B站网课进度追踪",
+  "version": "2.0.0",
+  "description": "自动记录B站课程观看进度，一键识别合集导入，独立仪表盘窗口",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.bilibili.com/*",
+    "*://api.bilibili.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.bilibili.com/*"],
+      "js": ["src/content-patch.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["*://*.bilibili.com/*"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "B站进度追踪",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}
