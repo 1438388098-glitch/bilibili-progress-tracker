@@ -1,5 +1,9 @@
 # B站网课进度追踪器
 
+> **English**: A Chrome extension (Manifest V3) that automatically records your Bilibili web-course watching progress, with official collection/playlist recognition and study statistics.
+> Tracks playback every 5 seconds (adjustable), supports multi-part (multi-P) videos with per-part progress, an adjustable completion threshold (default 98%), daily study time with streaks, JSON backup / CSV export / JSON import, and a standalone dashboard window.
+> **Run**: at `chrome://extensions`, enable Developer mode and load this project folder as an unpacked extension — progress is then tracked automatically while you watch on Bilibili.
+
 自动记录哔哩哔哩（Bilibili）网页版课程观看进度，支持合集识别与学习统计。
 
 ## 功能
